@@ -1,0 +1,24 @@
+{
+  "name": "onblock",
+  "version": "0.1.0",
+  "description": "onblock JavaScript SDK",
+  "main": "dist/onblock.min.js",
+  "author": "onblock-team",
+  "scripts": {
+    "build": "webpack"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "eventemitter3": "^3.1.0",
+    "uuidv4": "^4.0.0"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.4.3",
+    "@babel/plugin-transform-runtime": "^7.4.3",
+    "@babel/preset-env": "^7.4.3",
+    "@babel/runtime": "^7.4.3",
+    "babel-loader": "^8.0.5",
+    "webpack": "^4.29.6",
+    "webpack-cli": "^3.3.0"
+  }
+}
