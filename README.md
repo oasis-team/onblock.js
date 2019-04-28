@@ -10,7 +10,7 @@ npm install onblock
 
 ## CDN
 ```javascript
-<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/onblock@0.1.1/dist/onblock.min.js"></script>
+<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/onblock@0.1.3/dist/onblock.min.js"></script>
 ```
 exports to window.OnBlock global.
 
