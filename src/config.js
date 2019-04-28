@@ -23,6 +23,10 @@ const config = {
     }
   ],
   onblockUrl: 'https://onblock.me',
+  onblockUrls: [
+    'onblock.me',
+    'onblock.com',
+  ],
 }
 
 export default config

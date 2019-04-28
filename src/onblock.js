@@ -43,7 +43,6 @@ class OnBlock {
       throw 'need enable'
     }
     IOST.IOST.prototype.signAndSend = signAndSend.bind(this)
-    IOST.IOST.prototype.getOnBlockAccountInfo = getOnBlockAccountInfo.bind(this)
 
     this.pack = IOST
     this.iost = new IOST.IOST(config.defaultConfig)
@@ -58,11 +57,20 @@ class OnBlock {
   }
 
   isInOnBlock(_onblockUrl){
+    let _hostname = ''
+    if(_onblockUrl){
+      try {
+          _hostname = new URL(_onblockUrl).hostname
+      } catch (err) {
+        console.log(err)
+      }
+    }
     this.onblockUrl = _onblockUrl || config.onblockUrl
+    const onblockUrls = [...config.onblockUrls, _hostname]
     const url = (window.location != window.parent.location)
     ? document.referrer
     : document.location.href;
-    return (new URL(url)).origin == this.onblockUrl
+    return onblockUrls.indexOf((new URL(url)).hostname) > -1
   }
 
   enable(){
@@ -82,6 +90,22 @@ class OnBlock {
       }
     })
   }
+
+  getOnBlockAccountInfo(){
+    return new Promise((resolve, reject) => {
+      if(!this.account) return reject('no account') 
+      const actionId = uuidv4()
+      const EE = new Message()
+      actionMap[actionId] = EE
+      EE.on('success', data => resolve({ balances: data }))
+      .on('failed', reject)
+      top.postMessage({
+        action: 'GET_OnBlock_ACCOUNT_INFO', 
+        actionId, 
+        data: { account: this.account } 
+      }, this.onblockUrl)
+    })
+  }
 }
 
 function signAndSend(tx){
@@ -92,25 +116,9 @@ function signAndSend(tx){
   if(this.account){
     top.postMessage({ action: 'TX_ASK', actionId, data: { domain,  tx } }, this.onblockUrl)
   }else{
-    EE.delay(0).emit('failed', 'no account')
+    EE.delay(0).emit('failed', {type: 'err', message: 'no account'})
   } 
   return EE
-}
-
-function getOnBlockAccountInfo(){
-  return new Promise((resolve, reject) => {
-    if(!this.account) return reject('no account') 
-    const actionId = uuidv4()
-    const EE = new Message()
-    actionMap[actionId] = EE
-    EE.on('success', data => resolve({ balances: data }))
-    .on('failed', reject)
-    top.postMessage({
-      action: 'GET_OnBlock_ACCOUNT_INFO', 
-      actionId, 
-      data: { account: this.account } 
-    }, this.onblockUrl)
-  })
 }
 
 export default OnBlock
