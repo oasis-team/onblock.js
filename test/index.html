@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+  <meta charset='UTF-8'>
+  <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+  <meta http-equiv='X-UA-Compatible' content='ie=edge'>
+  <title>Document</title>
+  <script src="https://cdn.jsdelivr.net/npm/eosjs@16.0.9/lib/eos.min.js"></script>
+  <script src='../dist/onblock.min.js'></script>
+</head>
+<body>
+  <button id="starteos">Start Eos</button>
+  <script>
+    const btn = document.querySelector('#starteos')
+    btn.onclick = function(){
+      const isOnblock = OnBlock.isInOnBlock('http://localhost:4000')
+      OnBlock.enable().then(name => {
+        if(!name) return;
+        const eos = OnBlock.newEOS(Eos)
+        // OnBlock.getOnBlockAccountInfo().then(data => {
+        //   console.log(data)
+        // })
+        // oid
+        // eos.getAccount('valetonovale')
+        eos.transfer(name, 'duwangzhouru', '0.0001 EOS', '').then(console.log)
+        // eos.contract('endlesslotto').then(contract => console.log(contract))
+      })
+    }
+    // const eos = OnBlock.newEOS(Eos)
+    // eos.transfer(name, 'duwangzhouru123', '0.0001 EOS', '').then(console.log)
+      // eos.contract('eosio.token').then(contract => {
+      //   console.log(contract)
+      // }).catch(err => {
+      //   console.log(err)
+      // })
+    //   eos.transaction({
+    //   actions: [{
+    //     account: 'eosio.token',
+    //     name: 'transfer',
+    //     authorization: [{
+    //         actor: 'xxx',
+    //         permission: 'xxx',
+    //     }],
+    //     data: {
+    //         from: 'xxx',
+    //         to: 'xxx',
+    //         quantity: '0.0001 EOS',
+    //         memo: 'memo',
+    //     },
+    //   },{
+    //     account: 'eosio.token',
+    //     name: 'transfer',
+    //     authorization: [{
+    //         actor: 'xxx',
+    //         permission: 'xxx',
+    //     }],
+    //     data: {
+    //         from: 'xxx',
+    //         to: 'xxx',
+    //         quantity: '0.0001 EOS',
+    //         memo: 'memo',
+    //     },
+    //   }]
+    // }).then(data => console.log(data))
+  </script>
+</body>
+</html>

@@ -23,7 +23,6 @@ const onMessage = ({ source, data: message }) => {
   }
 }
 
-
 class OnBlock {
   constructor(url){
     this.pack = null
@@ -33,6 +32,23 @@ class OnBlock {
     this.network = null
     
     window.addEventListener('message', onMessage)
+  }
+
+  isInOnBlock(_onblockUrl){
+    let _hostname = ''
+    if(_onblockUrl){
+      try {
+        _hostname = new URL(_onblockUrl).hostname
+      } catch (err) {
+        console.log(err)
+      }
+    }
+    this.onblockUrl = _onblockUrl || config.onblockUrl
+    const onblockUrls = [...config.onblockUrls, _hostname]
+    const url = (window.location != window.parent.location)
+    ? document.referrer
+    : document.location.href;
+    return onblockUrls.indexOf((new URL(url)).hostname) > -1
   }
 
   newIOST(IOST){
@@ -54,23 +70,6 @@ class OnBlock {
     this.iost.rpc = this.rpc
 
     return this.iost
-  }
-
-  isInOnBlock(_onblockUrl){
-    let _hostname = ''
-    if(_onblockUrl){
-      try {
-          _hostname = new URL(_onblockUrl).hostname
-      } catch (err) {
-        console.log(err)
-      }
-    }
-    this.onblockUrl = _onblockUrl || config.onblockUrl
-    const onblockUrls = [...config.onblockUrls, _hostname]
-    const url = (window.location != window.parent.location)
-    ? document.referrer
-    : document.location.href;
-    return onblockUrls.indexOf((new URL(url)).hostname) > -1
   }
 
   enable(){
@@ -106,6 +105,102 @@ class OnBlock {
       }, this.onblockUrl)
     })
   }
+
+  newEOS(Eos, network = config.eosNetwork){
+    const httpEndpoint = `${network.protocol}://${network.host}${network.port ? ':' : ''}${network.port}`
+
+    const signAndSend = (actions) => new Promise((resolve, reject) => {
+      if(!this.account) return reject({type: 'err', message: 'no account'})
+
+      const domain = document.domain
+      const actionId = uuidv4()
+      const EE = new Message()
+      actionMap[actionId] = EE
+      EE.on('success', resolve)
+      .on('failed', reject)
+      const tx = { actions }
+      top.postMessage({ 
+        action: 'TX_ASK', 
+        actionId, 
+        data: { domain,  tx, chain: 'eos' } 
+      }, this.onblockUrl)
+    })
+
+    const transfer = (args, account) => {
+
+      const [from, to, quantity, memo] = args
+      // if(args.length<4){
+      //   return Promise.reject('error')
+      // }
+      return signAndSend([{
+        account,
+        name: 'transfer',
+        data: {
+          from, 
+          to, 
+          quantity, 
+          memo,
+        }
+      }])
+    }
+
+    const transaction = (args) => {
+      const [ { actions = [] } ] = args
+      const sdata = actions.map(({ account, name, data }) => ({
+        account,
+        name,
+        data
+      }))
+      return signAndSend(sdata)
+    }
+    
+    return new Proxy(Eos({ httpEndpoint, chainId: network.chainId }),{
+
+      get(instance, method) {
+        if(typeof instance[method] !== 'function') return instance[method];
+
+        return (...args) => {
+          if(method === 'transfer'){
+            return transfer(args, 'eosio.token')
+          }else if(method === 'transaction'){
+            return transaction(args)
+          }
+          return new Promise((resolve, reject) => {
+            instance[method](...args).then(result => {
+              if(!result.hasOwnProperty('fc')) return resolve(result);
+              const [ account ] = args
+              resolve(new Proxy(result, {
+                get(instance,method){
+                  if(method === 'then') return instance[method];
+
+                  return (...args) => {
+
+                    if(method === 'transfer'){
+                      return transfer(args, account)
+                    }else if(method === 'transaction'){
+                      return transaction(args)
+                    }
+                    const [ data ] = args
+                    return signAndSend([{
+                      account,
+                      name: method,
+                      data
+                    }])
+
+                  }
+
+                }
+              }))
+
+            })
+          })
+
+        }
+
+      }
+
+    })
+  }
 }
 
 function signAndSend(tx){
@@ -114,7 +209,7 @@ function signAndSend(tx){
   const EE = new Message()
   actionMap[actionId] = EE
   if(this.account){
-    top.postMessage({ action: 'TX_ASK', actionId, data: { domain,  tx } }, this.onblockUrl)
+    top.postMessage({ action: 'TX_ASK', actionId, data: { domain,  tx, chain: 'iost' } }, this.onblockUrl)
   }else{
     EE.delay(0).emit('failed', {type: 'err', message: 'no account'})
   } 
